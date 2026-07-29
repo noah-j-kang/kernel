@@ -6,13 +6,32 @@ export default function Dashboard() {
   const [orderbook, setOrderbook] = useState({ bids: [], asks: [] });
   const [wallet, setWallet] = useState({ usd: 100000.0, kernel: 0.0 });
   const [connected, setConnected] = useState(false);
+  
+  const API_KEY = 'local_user_123';
+
+  const fetchWallet = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/v1/wallet', {
+        headers: { 'X-API-KEY': API_KEY }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setWallet(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch wallet', e);
+    }
+  };
 
   useEffect(() => {
-    // In production this connects to our deployed Uvicorn API
-    // Local dev simulates standard FastAPI ws endpoint
+    fetchWallet();
+
     const ws = new WebSocket('ws://localhost:8000/ws');
     
-    ws.onopen = () => setConnected(true);
+    ws.onopen = () => {
+      setConnected(true);
+      ws.send(JSON.stringify({ type: 'auth', api_key: API_KEY }));
+    };
     ws.onclose = () => setConnected(false);
     
     ws.onmessage = (event) => {
@@ -20,12 +39,57 @@ export default function Dashboard() {
         const data = JSON.parse(event.data);
         if (data.type === 'l2_update') {
           setOrderbook(data.book);
+        } else if (data.type === 'fill') {
+          fetchWallet();
         }
       } catch (e) {}
     };
 
     return () => ws.close();
   }, []);
+
+  const handleMarketOrder = async (side) => {
+    if (side === 'sell' && wallet.kernel < 1.0) {
+      alert("Insufficient Kernel balance to sell!");
+      return;
+    }
+    
+    if (side === 'buy') {
+      const bestAsk = orderbook.asks.length > 0 ? orderbook.asks[0][0] : null;
+      if (!bestAsk) {
+        alert("No liquidity to buy from!");
+        return;
+      }
+      if (wallet.usd < bestAsk) {
+        alert("Insufficient USD balance to buy!");
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch('http://localhost:8000/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': API_KEY
+        },
+        body: JSON.stringify({
+          side,
+          type: 'market',
+          quantity: 1.0,
+          price: side === 'buy' ? 99999.0 : 0.01 // simulating market order with deep limits
+        })
+      });
+      if (res.ok) {
+        fetchWallet();
+      } else {
+        const err = await res.json();
+        alert("Order failed: " + (err.detail || "Unknown error"));
+      }
+    } catch (e) {
+      console.error("Order error", e);
+    }
+  };
 
   const calculateMaxVolume = (levels) => {
     return Math.max(...levels.map(l => l[1]), 1);
@@ -36,7 +100,6 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-grid">
-      {/* Left Column: User Portfolio */}
       <section className="glass-panel" style={{ padding: '1.5rem' }}>
         <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>Portfolio</h2>
         <div style={{ marginBottom: '1rem' }}>
@@ -52,14 +115,13 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <h2 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '1rem' }}>Quick Trade</h2>
+        <h2 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '1rem' }}>Quick Trade (1 MKT)</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-          <button className="btn" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', borderColor: 'var(--success)' }}>Buy MKT</button>
-          <button className="btn" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'var(--danger)' }}>Sell MKT</button>
+          <button onClick={() => handleMarketOrder('buy')} className="btn" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', borderColor: 'var(--success)' }}>Buy MKT</button>
+          <button onClick={() => handleMarketOrder('sell')} className="btn" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'var(--danger)' }}>Sell MKT</button>
         </div>
       </section>
 
-      {/* Middle Column: Chart / Tape */}
       <section className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2>Execution Tape</h2>
@@ -77,7 +139,6 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Right Column: Order Book */}
       <section className="glass-panel" style={{ padding: '1.5rem' }}>
         <h2 style={{ marginBottom: '1.5rem' }}>L2 Order Book</h2>
         
