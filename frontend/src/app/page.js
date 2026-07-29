@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Chart from './Chart';
 
 export default function Dashboard() {
   const [orderbooks, setOrderbooks] = useState({
@@ -185,6 +186,8 @@ export default function Dashboard() {
   const buyPreview = getOrderPreview('buy', tradeQuantity || 0, orderType, limitPrice);
   const sellPreview = getOrderPreview('sell', tradeQuantity || 0, orderType, limitPrice);
 
+  const currentMid = currentOrderbook.bids.length > 0 ? currentOrderbook.bids[0][0] : 0;
+
   return (
     <div className="dashboard-grid">
       <section className="glass-panel" style={{ padding: '1.5rem' }}>
@@ -212,8 +215,8 @@ export default function Dashboard() {
         
         {Object.entries(wallet.positions || {}).map(([inst, pos]) => {
           if (pos.size === 0) return null;
-          const currentMid = (orderbooks[inst] && orderbooks[inst].bids.length > 0) ? orderbooks[inst].bids[0][0] : 0;
-          const unrealizedPnL = currentMid > 0 ? (currentMid - pos.entry) * pos.size : 0;
+          const instMid = (orderbooks[inst] && orderbooks[inst].bids.length > 0) ? orderbooks[inst].bids[0][0] : 0;
+          const unrealizedPnL = instMid > 0 ? (instMid - pos.entry) * pos.size : 0;
           
           return (
             <div key={inst} style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }}>
@@ -349,7 +352,7 @@ export default function Dashboard() {
 
       <section className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2>Derivatives Engine</h2>
+          <h2>Market Data ({instrumentId})</h2>
           <span className="text-muted" style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {connected ? (
               <><div className="live-indicator"></div> Live</>
@@ -359,8 +362,12 @@ export default function Dashboard() {
           </span>
         </div>
         
+        <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1.5rem' }}>
+          <Chart instrumentId={instrumentId} currentMid={currentMid} />
+        </div>
+        
         <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: '2rem', color: 'var(--text-secondary)' }}>
-          <h3 style={{color: '#fff', marginBottom: '1rem'}}>Market Overview</h3>
+          <h3 style={{color: '#fff', marginBottom: '1rem'}}>Derivatives Engine</h3>
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem'}}>
             <div style={{padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)'}}>
               <div className="text-muted" style={{fontSize: '0.875rem'}}>Index Price (Spot)</div>
