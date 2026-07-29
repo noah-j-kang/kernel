@@ -57,8 +57,13 @@ class Engine:
                     exec_price = resting_order.price
                     executions.append(Execution(order.user_id, resting_order.user_id, exec_price, trade_qty, time.time()))
                     
-                    self.update_wallet(order.user_id, -exec_price * trade_qty, trade_qty)
-                    self.update_wallet(resting_order.user_id, exec_price * trade_qty, -trade_qty)
+                    # Apply market friction (fees)
+                    trade_value = exec_price * trade_qty
+                    fee_taker = trade_value * 0.0010  # 10 bps taker fee
+                    fee_maker = trade_value * 0.0005  # 5 bps maker fee
+                    
+                    self.update_wallet(order.user_id, -trade_value - fee_taker, trade_qty)
+                    self.update_wallet(resting_order.user_id, trade_value - fee_maker, -trade_qty)
                     
                     remaining_qty -= trade_qty
                     resting_order.quantity -= trade_qty
@@ -83,8 +88,13 @@ class Engine:
                     exec_price = resting_order.price
                     executions.append(Execution(resting_order.user_id, order.user_id, exec_price, trade_qty, time.time()))
                     
-                    self.update_wallet(resting_order.user_id, -exec_price * trade_qty, trade_qty)
-                    self.update_wallet(order.user_id, exec_price * trade_qty, -trade_qty)
+                    # Apply market friction (fees)
+                    trade_value = exec_price * trade_qty
+                    fee_taker = trade_value * 0.0010  # 10 bps taker fee
+                    fee_maker = trade_value * 0.0005  # 5 bps maker fee
+                    
+                    self.update_wallet(resting_order.user_id, -trade_value - fee_maker, trade_qty)
+                    self.update_wallet(order.user_id, trade_value - fee_taker, -trade_qty)
                     
                     remaining_qty -= trade_qty
                     resting_order.quantity -= trade_qty

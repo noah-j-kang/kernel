@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
 import time
 import uuid
+import json
 
 from backend.database import db
 from backend.engine import Engine
@@ -68,12 +70,27 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Kernel Exchange API", version="1.0.0", lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For local dev
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "service": "kernel-exchange-engine"}
 
+@app.get("/v1/wallet")
+async def get_wallet(user_id: str = Depends(validate_auth_and_rate_limit)):
+    return engine.get_wallet(user_id)
+
 @app.post("/v1/orders")
 async def place_order(req: OrderRequest, user_id: str = Depends(validate_auth_and_rate_limit)):
+    # Simulate market friction: network/processing latency
+    await asyncio.sleep(0.15)
+    
     order = Order(
         order_id=str(uuid.uuid4()),
         user_id=user_id,
@@ -104,6 +121,9 @@ async def place_order(req: OrderRequest, user_id: str = Depends(validate_auth_an
 
 @app.delete("/v1/orders/{order_id}")
 async def cancel_order(order_id: str, user_id: str = Depends(validate_auth_and_rate_limit)):
+    # Simulate market friction: network/processing latency
+    await asyncio.sleep(0.15)
+    
     success = engine.cancel_order(order_id)
     return {"success": success}
 
@@ -114,10 +134,19 @@ async def get_orderbook():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await ws_manager.connect(websocket)
+    user_id = None
     try:
         while True:
             data = await websocket.receive_text()
             if data == "ping":
                 await websocket.send_text("pong")
+            else:
+                try:
+                    parsed = json.loads(data)
+                    if parsed.get("type") == "auth":
+                        user_id = parsed.get("api_key")
+                        ws_manager.user_connections[user_id] = websocket
+                except:
+                    pass
     except WebSocketDisconnect:
-        ws_manager.disconnect(websocket)
+        ws_manager.disconnect(websocket, user_id)
