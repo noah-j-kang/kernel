@@ -18,6 +18,9 @@ CREATE TABLE wallets (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     usd_balance NUMERIC(15, 2) DEFAULT 100000.00,
     kernel_balance NUMERIC(15, 4) DEFAULT 0.0000,
+    margin_usd NUMERIC(15, 2) DEFAULT 0.00,
+    kernel_perp NUMERIC(15, 4) DEFAULT 0.0000,
+    kernel_perp_entry NUMERIC(15, 4) DEFAULT 0.0000,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -25,6 +28,7 @@ CREATE TABLE executions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     buyer_id UUID REFERENCES users(id),
     seller_id UUID REFERENCES users(id),
+    instrument_id VARCHAR(50) DEFAULT 'KERNEL-USD-SPOT',
     price NUMERIC(10, 2) NOT NULL,
     quantity NUMERIC(15, 4) NOT NULL,
     executed_at TIMESTAMPTZ DEFAULT NOW()

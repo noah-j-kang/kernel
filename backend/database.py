@@ -45,14 +45,15 @@ class Database:
                 if trades:
                     # Execute executemany is safer for mixed types in asyncpg than copy_records if we just want basic inserts
                     query = """
-                        INSERT INTO executions (id, buyer_id, seller_id, price, quantity, executed_at)
-                        VALUES ($1, $2, $3, $4, $5, $6)
+                        INSERT INTO executions (id, buyer_id, seller_id, instrument_id, price, quantity, executed_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7)
                     """
                     records = [
                         (
                             t['id'], 
                             t['buyer_id'], 
                             t['seller_id'], 
+                            t.get('instrument_id', 'KERNEL-USD-SPOT'),
                             t['price'], 
                             t['quantity'], 
                             datetime.datetime.fromtimestamp(t['executed_at'], tz=datetime.timezone.utc)
@@ -63,15 +64,18 @@ class Database:
                 # Update wallets
                 if wallets:
                     wallet_query = """
-                        INSERT INTO wallets (user_id, usd_balance, kernel_balance, updated_at)
-                        VALUES ($1, $2, $3, NOW())
+                        INSERT INTO wallets (user_id, usd_balance, kernel_balance, margin_usd, kernel_perp, kernel_perp_entry, updated_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, NOW())
                         ON CONFLICT (user_id) DO UPDATE SET
                             usd_balance = EXCLUDED.usd_balance,
                             kernel_balance = EXCLUDED.kernel_balance,
+                            margin_usd = EXCLUDED.margin_usd,
+                            kernel_perp = EXCLUDED.kernel_perp,
+                            kernel_perp_entry = EXCLUDED.kernel_perp_entry,
                             updated_at = NOW();
                     """
                     wallet_records = [
-                        (uid, w['usd'], w['kernel']) for uid, w in wallets.items()
+                        (uid, w['usd'], w['kernel'], w.get('margin_usd', 0.0), w.get('kernel_perp', 0.0), w.get('kernel_perp_entry', 0.0)) for uid, w in wallets.items()
                     ]
                     await conn.executemany(wallet_query, wallet_records)
 

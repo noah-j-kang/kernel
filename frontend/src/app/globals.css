@@ -83,7 +83,7 @@ body {
 /* Grid Layout */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 300px 1fr 350px;
+  grid-template-columns: 380px 1fr 350px;
   gap: 1.5rem;
   margin-top: 2rem;
 }
