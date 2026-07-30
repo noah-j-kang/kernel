@@ -24,6 +24,8 @@ export default function Dashboard() {
   
   const [sessionToken, setSessionToken] = useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [hoverSell, setHoverSell] = useState(false);
+  const [hoverBuy, setHoverBuy] = useState(false);
 
   useEffect(() => {
     import('../../lib/supabaseClient').then(({ supabase }) => {
@@ -205,6 +207,14 @@ export default function Dashboard() {
   const maxBidVol = calculateMaxVolume(currentOrderbook.bids);
   const maxAskVol = calculateMaxVolume(currentOrderbook.asks);
 
+  const MAX_ROWS_SELL = hoverSell ? 16 : 8;
+  const displayAsks = currentOrderbook.asks ? currentOrderbook.asks.slice(0, MAX_ROWS_SELL) : [];
+  const hasMoreAsks = currentOrderbook.asks && currentOrderbook.asks.length > MAX_ROWS_SELL;
+
+  const MAX_ROWS_BUY = hoverBuy ? 16 : 8;
+  const displayBids = currentOrderbook.bids ? currentOrderbook.bids.slice(0, MAX_ROWS_BUY) : [];
+  const hasMoreBids = currentOrderbook.bids && currentOrderbook.bids.length > MAX_ROWS_BUY;
+
   const buyPreview = getOrderPreview('buy', tradeQuantity || 0, orderType, limitPrice);
   const sellPreview = getOrderPreview('sell', tradeQuantity || 0, orderType, limitPrice);
 
@@ -231,7 +241,7 @@ export default function Dashboard() {
         <div style={{ flex: 1, textAlign: 'right' }}>
           <button 
             onClick={handleLogout} 
-            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', fontFamily: '"Roboto Mono", monospace', textDecoration: 'underline' }}
             onMouseOver={(e) => e.target.style.color = 'var(--primary)'}
             onMouseOut={(e) => e.target.style.color = 'var(--text-secondary)'}
           >
@@ -451,36 +461,48 @@ export default function Dashboard() {
           <div style={{ textAlign: 'right' }}>Total</div>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1rem' }}>
-          {currentOrderbook.asks.slice().reverse().map((ask, i) => (
-            <div key={i} className="book-row depth-bar-container text-red">
-              <div className="depth-bar ask" style={{ width: `${(ask[1] / maxAskVol) * 100}%` }}></div>
-              <div>{ask[0].toFixed(2)}</div>
-              <div style={{ textAlign: 'right' }}>{ask[1].toFixed(2)}</div>
-              <div style={{ textAlign: 'right' }}>{(ask[0] * ask[1]).toLocaleString()}</div>
+        <div style={{ fontFamily: '"Roboto Mono", monospace', fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Sell Orders</div>
+        <div 
+          onMouseEnter={() => setHoverSell(true)} 
+          onMouseLeave={() => setHoverSell(false)}
+          style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', height: hoverSell ? '500px' : '250px', gap: '0.25rem', marginBottom: '1rem', transition: 'height 0.2s ease-in-out', overflow: 'hidden' }}
+        >
+          {displayAsks.map((ask, i) => (
+            <div key={i} className="book-row depth-bar-container text-red" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', fontSize: '0.875rem', position: 'relative' }}>
+              <div className="depth-bar ask" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, background: 'rgba(239, 68, 68, 0.1)', width: `${(ask[1] / maxAskVol) * 100}%`, zIndex: 0 }}></div>
+              <div style={{ zIndex: 1 }}>{ask[0].toFixed(2)}</div>
+              <div style={{ textAlign: 'right', zIndex: 1 }}>{ask[1].toFixed(2)}</div>
+              <div style={{ textAlign: 'right', zIndex: 1 }}>{(ask[0] * ask[1]).toLocaleString()}</div>
             </div>
           ))}
           {currentOrderbook.asks.length === 0 && (
              <div className="text-muted" style={{ textAlign: 'center', padding: '1rem' }}>Awaiting Asks...</div>
           )}
+          {hasMoreAsks && <div className="text-muted" style={{ textAlign: 'center', fontSize: '1rem', color: 'var(--text-secondary)', paddingBottom: '0.5rem' }}>...</div>}
         </div>
         
         <div style={{ textAlign: 'center', padding: '0.5rem 0', fontSize: '1.25rem', fontWeight: 600, borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: '1rem' }}>
           {currentOrderbook.bids.length > 0 ? currentOrderbook.bids[0][0].toFixed(2) : '---'}
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {currentOrderbook.bids.map((bid, i) => (
-            <div key={i} className="book-row depth-bar-container text-green">
-              <div className="depth-bar" style={{ width: `${(bid[1] / maxBidVol) * 100}%` }}></div>
-              <div>{bid[0].toFixed(2)}</div>
-              <div style={{ textAlign: 'right' }}>{bid[1].toFixed(2)}</div>
-              <div style={{ textAlign: 'right' }}>{(bid[0] * bid[1]).toLocaleString()}</div>
+        <div style={{ fontFamily: '"Roboto Mono", monospace', fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Buy Orders</div>
+        <div 
+          onMouseEnter={() => setHoverBuy(true)} 
+          onMouseLeave={() => setHoverBuy(false)}
+          style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', height: hoverBuy ? '500px' : '250px', gap: '0.25rem', transition: 'height 0.2s ease-in-out', overflow: 'hidden' }}
+        >
+          {displayBids.map((bid, i) => (
+            <div key={i} className="book-row depth-bar-container text-green" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', fontSize: '0.875rem', position: 'relative' }}>
+              <div className="depth-bar" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, background: 'rgba(16, 185, 129, 0.1)', width: `${(bid[1] / maxBidVol) * 100}%`, zIndex: 0 }}></div>
+              <div style={{ zIndex: 1 }}>{bid[0].toFixed(2)}</div>
+              <div style={{ textAlign: 'right', zIndex: 1 }}>{bid[1].toFixed(2)}</div>
+              <div style={{ textAlign: 'right', zIndex: 1 }}>{(bid[0] * bid[1]).toLocaleString()}</div>
             </div>
           ))}
           {currentOrderbook.bids.length === 0 && (
              <div className="text-muted" style={{ textAlign: 'center', padding: '1rem' }}>Awaiting Bids...</div>
           )}
+          {hasMoreBids && <div className="text-muted" style={{ textAlign: 'center', fontSize: '1rem', color: 'var(--text-secondary)', paddingBottom: '0.5rem' }}>...</div>}
         </div>
       </section>
     </div>
