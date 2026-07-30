@@ -1,7 +1,9 @@
 import './globals.css';
-import { Inter } from 'next/font/google';
+import { Roboto_Mono } from 'next/font/google';
+import CustomCursor from './CustomCursor';
+import Link from 'next/link';
 
-const inter = Inter({ subsets: ['latin'] });
+const robotoMono = Roboto_Mono({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Kernel Exchange',
@@ -11,16 +13,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <header className="header">
-          <div className="brand">
-            <div className="live-indicator"></div>
-            Kernel Exchange
-          </div>
-          <nav>
-            <button className="btn btn-primary">Generate API Key</button>
-          </nav>
-        </header>
+      <body className={robotoMono.className}>
+        <CustomCursor />
+
         <main className="container">
           {children}
         </main>
