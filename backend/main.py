@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -282,8 +285,30 @@ async def websocket_endpoint(websocket: WebSocket):
                 try:
                     parsed = json.loads(data)
                     if parsed.get("type") == "auth":
-                        user_id = parsed.get("api_key")
-                        ws_manager.user_connections[user_id] = websocket
+                        token = parsed.get("api_key")
+                        user_id = token
+                        if token and len(token) > 100: # Heuristic for JWT
+                            try:
+                                import jwt
+                                import os
+                                unverified_header = jwt.get_unverified_header(token)
+                                alg = unverified_header.get("alg")
+                                
+                                if alg == "RS256":
+                                    supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+                                    jwks_client = jwt.PyJWKClient(f"{supabase_url}/auth/v1/.well-known/jwks.json")
+                                    signing_key = jwks_client.get_signing_key_from_jwt(token)
+                                    secret_or_key = signing_key.key
+                                else:
+                                    secret_or_key = os.getenv("SUPABASE_JWT_SECRET", "")
+                                    
+                                payload = jwt.decode(token, secret_or_key, algorithms=["HS256", "RS256"], audience="authenticated")
+                                user_id = payload.get("sub") or token
+                            except Exception:
+                                pass
+                        
+                        if user_id:
+                            ws_manager.user_connections[user_id] = websocket
                 except:
                     pass
     except WebSocketDisconnect:

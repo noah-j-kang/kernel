@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Chart from '../Chart';
 import Link from 'next/link';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function Dashboard() {
   const [orderbooks, setOrderbooks] = useState({
@@ -21,7 +22,21 @@ export default function Dashboard() {
   const [markPrice, setMarkPrice] = useState(0);
   const [indexPrice, setIndexPrice] = useState(0);
   
-  const API_KEY = 'local_user_123';
+  const [sessionToken, setSessionToken] = useState(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    import('../../lib/supabaseClient').then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setSessionToken(session.access_token);
+        } else {
+          window.location.href = '/login';
+        }
+        setIsLoadingAuth(false);
+      });
+    });
+  }, []);
 
   const currentOrderbook = orderbooks[instrumentId] || { bids: [], asks: [] };
 
@@ -74,9 +89,13 @@ export default function Dashboard() {
   };
 
   const fetchWallet = async () => {
+    if (!sessionToken) return;
     try {
       const res = await fetch('http://localhost:8000/v1/wallet', {
-        headers: { 'X-API-KEY': API_KEY }
+        headers: { 
+          'X-API-KEY': sessionToken,
+          'Authorization': `Bearer ${sessionToken}`
+        }
       });
       if (res.ok) {
         const data = await res.json();
@@ -88,13 +107,14 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    if (!sessionToken) return;
     fetchWallet();
 
     const ws = new WebSocket('ws://localhost:8000/ws');
     
     ws.onopen = () => {
       setConnected(true);
-      ws.send(JSON.stringify({ type: 'auth', api_key: API_KEY }));
+      ws.send(JSON.stringify({ type: 'auth', api_key: sessionToken }));
     };
     ws.onclose = () => setConnected(false);
     
@@ -118,7 +138,7 @@ export default function Dashboard() {
     };
 
     return () => ws.close();
-  }, []);
+  }, [sessionToken]);
 
   const handleTrade = async (side) => {
     const parsedQty = parseFloat(tradeQuantity) || 1;
@@ -156,7 +176,8 @@ export default function Dashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-KEY': API_KEY
+          'X-API-KEY': sessionToken,
+          'Authorization': `Bearer ${sessionToken}`
         },
         body: JSON.stringify({
           instrument_id: instrumentId,
@@ -189,14 +210,34 @@ export default function Dashboard() {
 
   const currentMid = currentOrderbook.bids.length > 0 ? currentOrderbook.bids[0][0] : 0;
 
+  if (isLoadingAuth) {
+    return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>Loading Authentication...</div>;
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  };
+
   return (
     <>
-      <div style={{ textAlign: 'center', padding: '2rem 0', marginBottom: '1rem' }}>
-        <Link href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <h1 style={{ fontSize: '3rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '-1px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2rem 2rem', marginBottom: '1rem' }}>
+        <div style={{ flex: 1 }}></div> {/* Left spacer to ensure center alignment */}
+        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '3rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '-1px', margin: 0 }}>
             Kernel Exchange
           </h1>
         </Link>
+        <div style={{ flex: 1, textAlign: 'right' }}>
+          <button 
+            onClick={handleLogout} 
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem' }}
+            onMouseOver={(e) => e.target.style.color = 'var(--primary)'}
+            onMouseOut={(e) => e.target.style.color = 'var(--text-secondary)'}
+          >
+            Logout
+          </button>
+        </div>
       </div>
       <div className="dashboard-grid">
       <section className="glass-panel" style={{ padding: '1.5rem' }}>

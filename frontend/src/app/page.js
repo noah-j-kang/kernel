@@ -51,7 +51,7 @@ export default function LandingPage() {
           Kernel Exchange
         </h1>
         <div className="animate-fade-up" style={{ animationDelay: '0.2s', marginTop: '3rem' }}>
-          <Link href="/trade" className="btn btn-primary" style={{ fontSize: '1.25rem', padding: '1rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '1rem', border: '1px solid #fff' }}>
+          <Link href="/login" className="btn btn-primary" style={{ fontSize: '1.25rem', padding: '1rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '1rem', border: '1px solid #fff' }}>
             Trade Kernel <span>→</span>
           </Link>
         </div>
