@@ -242,7 +242,7 @@ input, textarea, select {
   overflow: hidden;
   margin: 0 auto;
   display: inline-block;
-  animation: typewriter 1.5s steps(15) 0.5s 1 normal both, blinkTextCursor 500ms steps(15) infinite normal;
+  animation: typewriter 0.75s steps(15) 0.5s 1 normal both, blinkTextCursor 500ms steps(15) infinite normal;
 }
 @keyframes typewriter {
   from { width: 0; }
