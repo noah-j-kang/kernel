@@ -8,6 +8,7 @@ export default function Chart({ instrumentId, currentMid }) {
   
   // Ref to hold the current candle we are building
   const currentCandleRef = useRef(null);
+  const historyRef = useRef([]);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -59,11 +60,30 @@ export default function Chart({ instrumentId, currentMid }) {
     };
   }, []);
 
-  // When instrumentId changes, reset the chart
+  // When instrumentId changes, load saved history
   useEffect(() => {
-    if (series) {
-      series.setData([]);
-      currentCandleRef.current = null;
+    if (series && instrumentId) {
+      const saved = localStorage.getItem(`chart_history_${instrumentId}`);
+      let initialData = [];
+      if (saved) {
+        try {
+          initialData = JSON.parse(saved);
+        } catch (e) {}
+      }
+      
+      // Keep only up to last 1000 candles to avoid memory/storage bloat
+      if (initialData.length > 1000) {
+        initialData = initialData.slice(-1000);
+      }
+      
+      series.setData(initialData);
+      historyRef.current = initialData;
+      
+      if (initialData.length > 0) {
+        currentCandleRef.current = { ...initialData[initialData.length - 1] };
+      } else {
+        currentCandleRef.current = null;
+      }
     }
   }, [instrumentId, series]);
 
@@ -83,6 +103,8 @@ export default function Chart({ instrumentId, currentMid }) {
         close: currentMid,
       };
       series.update(currentCandleRef.current);
+      historyRef.current.push(currentCandleRef.current);
+      localStorage.setItem(`chart_history_${instrumentId}`, JSON.stringify(historyRef.current));
     } else {
       const candle = currentCandleRef.current;
       
@@ -97,15 +119,24 @@ export default function Chart({ instrumentId, currentMid }) {
         };
         currentCandleRef.current = newCandle;
         series.update(newCandle);
+        historyRef.current.push(newCandle);
+        if (historyRef.current.length > 1000) {
+          historyRef.current.shift();
+        }
+        localStorage.setItem(`chart_history_${instrumentId}`, JSON.stringify(historyRef.current));
       } else {
         // Update current candle
         candle.high = Math.max(candle.high, currentMid);
         candle.low = Math.min(candle.low, currentMid);
         candle.close = currentMid;
         series.update(candle);
+        if (historyRef.current.length > 0) {
+          historyRef.current[historyRef.current.length - 1] = candle;
+        }
+        localStorage.setItem(`chart_history_${instrumentId}`, JSON.stringify(historyRef.current));
       }
     }
-  }, [currentMid, series]);
+  }, [currentMid, series, instrumentId]);
 
   return <div ref={chartContainerRef} style={{ width: '100%', height: '300px' }} />;
 }
