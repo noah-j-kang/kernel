@@ -1,0 +1,1 @@
+This is a personal project I'm building for fun to simulate a (fake) market to trade Kernels! So far it features spot, perps, and options trading with market and limit orders and 10 bots for liquidity. APIs, auth, db, and implementation of more realistic bot scripts are in the works - will host once these are done!
