@@ -380,23 +380,39 @@ export default function Dashboard() {
           )}
         </div>
         
-        <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)', fontSize: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="text-muted">Buy Preview:</span>
-            <span>
-              Notional: ${buyPreview.baseCost.toFixed(2)} | Fee: <strong className="text-red">-${buyPreview.fee.toFixed(2)}</strong>
-              {instrumentId === 'KERNEL-USD-SPOT' && <span> = Cost: <strong className="text-red">${buyPreview.netTotal.toFixed(2)}</strong></span>}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="text-muted">Sell Preview:</span>
-            <span>
-              Notional: ${sellPreview.baseCost.toFixed(2)} | Fee: <strong className="text-red">-${sellPreview.fee.toFixed(2)}</strong>
-              {instrumentId === 'KERNEL-USD-SPOT' && <span> = Receive: <strong className="text-green">${sellPreview.netTotal.toFixed(2)}</strong></span>}
-            </span>
+        <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)', fontSize: '0.875rem' }}>
+          <h3 style={{ fontSize: '0.875rem', marginBottom: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Execution Preview</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: instrumentId === 'KERNEL-USD-SPOT' ? '1fr 1.5fr 1fr 1.5fr' : '1fr 1.5fr 1fr', gap: '0.5rem', fontVariantNumeric: 'tabular-nums', alignItems: 'center' }}>
+            {/* Headers */}
+            <div className="text-muted" style={{ fontWeight: 600 }}>Action</div>
+            <div className="text-muted" style={{ fontWeight: 600, textAlign: 'right' }}>Trade Value</div>
+            <div className="text-muted" style={{ fontWeight: 600, textAlign: 'right' }}>Est. Fee</div>
+            {instrumentId === 'KERNEL-USD-SPOT' && <div className="text-muted" style={{ fontWeight: 600, textAlign: 'right' }}>Net Impact</div>}
+            
+            {/* Buy Row */}
+            <div style={{ color: 'var(--success)' }}>Buy</div>
+            <div style={{ textAlign: 'right' }}>${buyPreview.baseCost.toFixed(2)}</div>
+            <div style={{ textAlign: 'right' }} className="text-red">-${buyPreview.fee.toFixed(2)}</div>
+            {instrumentId === 'KERNEL-USD-SPOT' && (
+              <div style={{ textAlign: 'right' }}>
+                <span className="text-muted">Cost:</span> <strong className="text-red">${buyPreview.netTotal.toFixed(2)}</strong>
+              </div>
+            )}
+            
+            {/* Sell Row */}
+            <div style={{ color: 'var(--danger)' }}>Sell</div>
+            <div style={{ textAlign: 'right' }}>${sellPreview.baseCost.toFixed(2)}</div>
+            <div style={{ textAlign: 'right' }} className="text-red">-${sellPreview.fee.toFixed(2)}</div>
+            {instrumentId === 'KERNEL-USD-SPOT' && (
+              <div style={{ textAlign: 'right' }}>
+                <span className="text-muted">Receive:</span> <strong className="text-green">${sellPreview.netTotal.toFixed(2)}</strong>
+              </div>
+            )}
           </div>
           {(!buyPreview.filled || !sellPreview.filled) && tradeQuantity > 0 && (
-            <div className="text-red" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>Warning: Order size exceeds current book liquidity</div>
+            <div className="text-red" style={{ fontSize: '0.75rem', marginTop: '1rem', borderTop: '1px solid rgba(239, 68, 68, 0.2)', paddingTop: '0.5rem' }}>
+              Warning: Order size exceeds current book liquidity.
+            </div>
           )}
         </div>
 
