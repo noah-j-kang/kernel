@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Chart from '../Chart';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabaseClient';
 
 export default function Dashboard() {
   const [orderbooks, setOrderbooks] = useState({
@@ -28,16 +27,13 @@ export default function Dashboard() {
   const [hoverBuy, setHoverBuy] = useState(false);
 
   useEffect(() => {
-    import('../../lib/supabaseClient').then(({ supabase }) => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setSessionToken(session.access_token);
-        } else {
-          window.location.href = '/login';
-        }
-        setIsLoadingAuth(false);
-      });
-    });
+    const token = localStorage.getItem('cookie_token');
+    if (token) {
+      setSessionToken(token);
+    } else {
+      window.location.href = '/login';
+    }
+    setIsLoadingAuth(false);
   }, []);
 
   const currentOrderbook = orderbooks[instrumentId] || { bids: [], asks: [] };
@@ -225,7 +221,8 @@ export default function Dashboard() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('cookie_token');
+    localStorage.removeItem('cookie_user_id');
     window.location.href = '/';
   };
 
