@@ -56,8 +56,8 @@ async def persistence_worker():
 async def funding_worker():
     while True:
         await asyncio.sleep(10.0) # run every 10 seconds for simulation
-        index_price = engine.get_midpoint("KERNEL-USD-SPOT")
-        mark_price = engine.get_midpoint("KERNEL-PERP")
+        index_price = engine.get_midpoint("COOKIE-USD-SPOT")
+        mark_price = engine.get_midpoint("COOKIE-PERP")
         
         if index_price is None or mark_price is None:
             continue
@@ -65,7 +65,7 @@ async def funding_worker():
         funding_rate = (mark_price - index_price) / index_price * 0.05 # 5% clamping factor for simulation
         
         for uid, w in list(engine.wallets.items()):
-            size = w.get("positions", {}).get("KERNEL-PERP", {}).get("size", 0.0)
+            size = w.get("positions", {}).get("COOKIE-PERP", {}).get("size", 0.0)
             if size != 0:
                 payment = size * mark_price * funding_rate
                 w["margin_usd"] -= payment
@@ -101,7 +101,7 @@ async def liquidation_worker():
                     if "C" in inst or "P" in inst:
                         try:
                             strike = float(inst.split("-")[1][:-1])
-                            spot = engine.get_midpoint("KERNEL-USD-SPOT") or 10.0
+                            spot = engine.get_midpoint("COOKIE-USD-SPOT") or 10.0
                             if "C" in inst:
                                 inst_mark = max(0, spot - strike)
                             else:
@@ -144,13 +144,13 @@ async def options_settlement_worker():
     from backend.orderbook import OrderBook
     while True:
         await asyncio.sleep(60.0) # Settle every 60 seconds
-        spot_price = engine.get_midpoint("KERNEL-USD-SPOT")
+        spot_price = engine.get_midpoint("COOKIE-USD-SPOT")
         if not spot_price: continue
         
         # We assume strikes are 9, 10, 11
         for strike in [9, 10, 11]:
-            inst_c = f"KERNEL-{strike}C"
-            inst_p = f"KERNEL-{strike}P"
+            inst_c = f"COOKIE-{strike}C"
+            inst_p = f"COOKIE-{strike}P"
             
             val_c = max(0, spot_price - strike)
             val_p = max(0, strike - spot_price)
@@ -180,7 +180,7 @@ async def options_settlement_worker():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Kernel Exchange Engine Starting...")
+    print("Cookie Exchange Engine Starting...")
     await db.connect()
     persistence_task = asyncio.create_task(persistence_worker())
     funding_task = asyncio.create_task(funding_worker())
@@ -191,14 +191,14 @@ async def lifespan(app: FastAPI):
     for i in range(5):
         bot_tasks.append(asyncio.create_task(market_maker_loop(f"mm_{i}", engine)))
         bot_tasks.append(asyncio.create_task(noise_trader_loop(f"nt_{i}", engine)))
-        bot_tasks.append(asyncio.create_task(market_maker_loop(f"perp_mm_{i}", engine, instrument_id="KERNEL-PERP")))
-        bot_tasks.append(asyncio.create_task(noise_trader_loop(f"perp_nt_{i}", engine, instrument_id="KERNEL-PERP")))
+        bot_tasks.append(asyncio.create_task(market_maker_loop(f"perp_mm_{i}", engine, instrument_id="COOKIE-PERP")))
+        bot_tasks.append(asyncio.create_task(noise_trader_loop(f"perp_nt_{i}", engine, instrument_id="COOKIE-PERP")))
         
     bot_tasks.append(asyncio.create_task(options_market_maker_loop("opt_mm", engine)))
     
     yield
     
-    print("Kernel Exchange Engine Shutting Down...")
+    print("Cookie Exchange Engine Shutting Down...")
     for task in bot_tasks:
         task.cancel()
     persistence_task.cancel()
@@ -207,7 +207,7 @@ async def lifespan(app: FastAPI):
     options_settlement_task.cancel()
     await db.disconnect()
 
-app = FastAPI(title="Kernel Exchange API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Cookie Exchange API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -219,7 +219,7 @@ app.add_middleware(
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "service": "kernel-exchange-engine"}
+    return {"status": "ok", "service": "cookie-exchange-engine"}
 
 @app.get("/v1/wallet")
 async def get_wallet(user_id: str = Depends(validate_auth_and_rate_limit)):
@@ -261,7 +261,7 @@ async def place_order(req: OrderRequest, user_id: str = Depends(validate_auth_an
     return {"order_id": order.order_id, "status": "open"}
 
 @app.delete("/v1/orders/{order_id}")
-async def cancel_order(order_id: str, instrument_id: str = "KERNEL-USD-SPOT", user_id: str = Depends(validate_auth_and_rate_limit)):
+async def cancel_order(order_id: str, instrument_id: str = "COOKIE-USD-SPOT", user_id: str = Depends(validate_auth_and_rate_limit)):
     # Simulate market friction: network/processing latency
     await asyncio.sleep(0.15)
     
@@ -269,8 +269,61 @@ async def cancel_order(order_id: str, instrument_id: str = "KERNEL-USD-SPOT", us
     return {"success": success}
 
 @app.get("/v1/orderbook")
-async def get_orderbook(instrument_id: str = "KERNEL-USD-SPOT"):
+async def get_orderbook(instrument_id: str = "COOKIE-USD-SPOT"):
     return engine.get_orderbook(instrument_id).get_snapshot()
+
+@app.get("/v1/leaderboard")
+async def get_leaderboard():
+    spot_price = engine.get_midpoint("COOKIE-USD-SPOT") or 10.0
+    
+    leaderboard = []
+    for uid, w in engine.wallets.items():
+        total_capital = w.get("usd", 0.0) + w.get("margin_usd", 0.0)
+        total_capital += w.get("cookie", 0.0) * spot_price
+        
+        for inst, pos in w.get("positions", {}).items():
+            size = pos["size"]
+            entry = pos["entry"]
+            if size == 0: continue
+            
+            inst_mark = engine.get_midpoint(inst)
+            if not inst_mark:
+                if "C" in inst or "P" in inst:
+                    try:
+                        strike = float(inst.split("-")[1][:-1])
+                        if "C" in inst:
+                            inst_mark = max(0, spot_price - strike)
+                        else:
+                            inst_mark = max(0, strike - spot_price)
+                    except:
+                        inst_mark = entry
+                else:
+                    inst_mark = entry
+                    
+            unrealized_pnl = (inst_mark - entry) * size
+            total_capital += unrealized_pnl
+
+        name = uid
+        if uid.startswith("mm_"):
+            name = f"Market Maker {uid.split('_')[1]}"
+        elif uid.startswith("nt_"):
+            name = f"Noise Trader {uid.split('_')[1]}"
+        elif uid.startswith("perp_mm_"):
+            name = f"Perp Market Maker {uid.split('_')[2]}"
+        elif uid.startswith("perp_nt_"):
+            name = f"Perp Noise Trader {uid.split('_')[2]}"
+        elif uid == "opt_mm":
+            name = "Options Market Maker"
+
+        leaderboard.append({"name": name, "capital": total_capital})
+
+    leaderboard.sort(key=lambda x: x["capital"], reverse=True)
+    
+    # add ranking
+    for i, entry in enumerate(leaderboard[:10]):
+        entry["rank"] = i + 1
+        
+    return leaderboard[:10]
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

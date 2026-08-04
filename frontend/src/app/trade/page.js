@@ -7,12 +7,12 @@ import { supabase } from '../../lib/supabaseClient';
 
 export default function Dashboard() {
   const [orderbooks, setOrderbooks] = useState({
-    'KERNEL-USD-SPOT': { bids: [], asks: [] },
-    'KERNEL-PERP': { bids: [], asks: [] }
+    'COOKIE-USD-SPOT': { bids: [], asks: [] },
+    'COOKIE-PERP': { bids: [], asks: [] }
   });
   const [tradeMode, setTradeMode] = useState('SPOT'); // SPOT, PERP, OPTIONS
-  const [instrumentId, setInstrumentId] = useState('KERNEL-USD-SPOT');
-  const [wallet, setWallet] = useState({ usd: 100000.0, kernel: 0.0, margin_usd: 0.0, positions: {} });
+  const [instrumentId, setInstrumentId] = useState('COOKIE-USD-SPOT');
+  const [wallet, setWallet] = useState({ usd: 100000.0, cookie: 0.0, margin_usd: 0.0, positions: {} });
   const [connected, setConnected] = useState(false);
   const [tradeQuantity, setTradeQuantity] = useState(1);
   const [orderType, setOrderType] = useState('market');
@@ -72,7 +72,7 @@ export default function Dashboard() {
       if (remaining <= 0) break;
     }
     
-    const isDeriv = instrumentId !== 'KERNEL-USD-SPOT';
+    const isDeriv = instrumentId !== 'COOKIE-USD-SPOT';
     const fee = totalValue * 0.0010; // 0.1% taker fee
     
     let netTotal;
@@ -124,7 +124,7 @@ export default function Dashboard() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'l2_update') {
-          const inst = data.instrument_id || 'KERNEL-USD-SPOT';
+          const inst = data.instrument_id || 'COOKIE-USD-SPOT';
           setOrderbooks(prev => ({
             ...prev,
             [inst]: data.book
@@ -144,8 +144,8 @@ export default function Dashboard() {
 
   const handleTrade = async (side) => {
     const parsedQty = parseFloat(tradeQuantity) || 1;
-    if (instrumentId === 'KERNEL-USD-SPOT' && side === 'sell' && wallet.kernel < parsedQty) {
-      alert("Insufficient Kernel balance to sell!");
+    if (instrumentId === 'COOKIE-USD-SPOT' && side === 'sell' && wallet.cookie < parsedQty) {
+      alert("Insufficient Cookie balance to sell!");
       return;
     }
     
@@ -157,7 +157,7 @@ export default function Dashboard() {
         alert("No liquidity to buy from!");
         return;
       }
-      if (instrumentId === 'KERNEL-USD-SPOT' && side === 'buy' && wallet.usd < preview.netTotal) {
+      if (instrumentId === 'COOKIE-USD-SPOT' && side === 'buy' && wallet.usd < preview.netTotal) {
         alert("Insufficient USD balance to buy!");
         return;
       }
@@ -167,7 +167,7 @@ export default function Dashboard() {
         alert("Please enter a valid limit price.");
         return;
       }
-      if (instrumentId === 'KERNEL-USD-SPOT' && side === 'buy' && wallet.usd < (execPrice * parsedQty * 1.001)) {
+      if (instrumentId === 'COOKIE-USD-SPOT' && side === 'buy' && wallet.usd < (execPrice * parsedQty * 1.001)) {
         alert("Insufficient USD balance for this limit order!");
         return;
       }
@@ -235,7 +235,7 @@ export default function Dashboard() {
         <div style={{ flex: 1 }}></div> {/* Left spacer to ensure center alignment */}
         <Link href="/" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'center' }}>
           <h1 style={{ fontSize: '3rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '-1px', margin: 0 }}>
-            Kernel Exchange
+            Cookie Exchange
           </h1>
         </Link>
         <div style={{ flex: 1, textAlign: 'right' }}>
@@ -260,9 +260,9 @@ export default function Dashboard() {
             </div>
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Kernel Token</div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Cookie Token</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 600 }}>
-              {(wallet.kernel || 0).toLocaleString(undefined, { minimumFractionDigits: 4 })}
+              {(wallet.cookie || 0).toLocaleString(undefined, { minimumFractionDigits: 4 })}
             </div>
           </div>
           <div style={{ gridColumn: 'span 2' }}>
@@ -294,17 +294,17 @@ export default function Dashboard() {
         
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <button 
-            onClick={() => { setTradeMode('SPOT'); setInstrumentId('KERNEL-USD-SPOT'); }} 
+            onClick={() => { setTradeMode('SPOT'); setInstrumentId('COOKIE-USD-SPOT'); }} 
             className="btn" 
             style={{ flex: 1, padding: '0.5rem', background: tradeMode === 'SPOT' ? 'var(--primary)' : 'transparent', border: '1px solid var(--border)', color: '#fff' }}
           >SPOT</button>
           <button 
-            onClick={() => { setTradeMode('PERP'); setInstrumentId('KERNEL-PERP'); }} 
+            onClick={() => { setTradeMode('PERP'); setInstrumentId('COOKIE-PERP'); }} 
             className="btn" 
             style={{ flex: 1, padding: '0.5rem', background: tradeMode === 'PERP' ? 'var(--primary)' : 'transparent', border: '1px solid var(--border)', color: '#fff' }}
           >PERP</button>
           <button 
-            onClick={() => { setTradeMode('OPTIONS'); setInstrumentId('KERNEL-10C'); }} 
+            onClick={() => { setTradeMode('OPTIONS'); setInstrumentId('COOKIE-10C'); }} 
             className="btn" 
             style={{ flex: 1, padding: '0.5rem', background: tradeMode === 'OPTIONS' ? 'var(--primary)' : 'transparent', border: '1px solid var(--border)', color: '#fff' }}
           >OPTIONS</button>
@@ -321,8 +321,8 @@ export default function Dashboard() {
             >
               {[9, 10, 11].map(strike => (
                 <optgroup label={`Strike $${strike}`} key={strike}>
-                  <option value={`KERNEL-${strike}C`}>${strike} Call</option>
-                  <option value={`KERNEL-${strike}P`}>${strike} Put</option>
+                  <option value={`COOKIE-${strike}C`}>${strike} Call</option>
+                  <option value={`COOKIE-${strike}P`}>${strike} Put</option>
                 </optgroup>
               ))}
             </select>
@@ -382,18 +382,18 @@ export default function Dashboard() {
         
         <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)', fontSize: '0.875rem' }}>
           <h3 style={{ fontSize: '0.875rem', marginBottom: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Execution Preview</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: instrumentId === 'KERNEL-USD-SPOT' ? '1fr 1.5fr 1fr 1.5fr' : '1fr 1.5fr 1fr', gap: '0.5rem', fontVariantNumeric: 'tabular-nums', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: instrumentId === 'COOKIE-USD-SPOT' ? '1fr 1.5fr 1fr 1.5fr' : '1fr 1.5fr 1fr', gap: '0.5rem', fontVariantNumeric: 'tabular-nums', alignItems: 'center' }}>
             {/* Headers */}
             <div className="text-muted" style={{ fontWeight: 600 }}>Action</div>
             <div className="text-muted" style={{ fontWeight: 600, textAlign: 'right' }}>Trade Value</div>
             <div className="text-muted" style={{ fontWeight: 600, textAlign: 'right' }}>Est. Fee</div>
-            {instrumentId === 'KERNEL-USD-SPOT' && <div className="text-muted" style={{ fontWeight: 600, textAlign: 'right' }}>Net Impact</div>}
+            {instrumentId === 'COOKIE-USD-SPOT' && <div className="text-muted" style={{ fontWeight: 600, textAlign: 'right' }}>Net Impact</div>}
             
             {/* Buy Row */}
             <div style={{ color: 'var(--success)' }}>Buy</div>
             <div style={{ textAlign: 'right' }}>${buyPreview.baseCost.toFixed(2)}</div>
             <div style={{ textAlign: 'right' }} className="text-red">-${buyPreview.fee.toFixed(2)}</div>
-            {instrumentId === 'KERNEL-USD-SPOT' && (
+            {instrumentId === 'COOKIE-USD-SPOT' && (
               <div style={{ textAlign: 'right' }}>
                 <span className="text-muted">Cost:</span> <strong className="text-red">${buyPreview.netTotal.toFixed(2)}</strong>
               </div>
@@ -403,7 +403,7 @@ export default function Dashboard() {
             <div style={{ color: 'var(--danger)' }}>Sell</div>
             <div style={{ textAlign: 'right' }}>${sellPreview.baseCost.toFixed(2)}</div>
             <div style={{ textAlign: 'right' }} className="text-red">-${sellPreview.fee.toFixed(2)}</div>
-            {instrumentId === 'KERNEL-USD-SPOT' && (
+            {instrumentId === 'COOKIE-USD-SPOT' && (
               <div style={{ textAlign: 'right' }}>
                 <span className="text-muted">Receive:</span> <strong className="text-green">${sellPreview.netTotal.toFixed(2)}</strong>
               </div>
@@ -522,34 +522,6 @@ export default function Dashboard() {
         </div>
       </section>
     </div>
-      {/* FOOTER */}
-      <footer style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr 1fr', 
-        borderTop: '1px solid #fff', 
-        borderBottom: '1px solid #fff', 
-        color: '#fff',
-        textTransform: 'uppercase',
-        fontSize: '0.875rem',
-        letterSpacing: '1px',
-        marginTop: '4rem'
-      }}>
-        <div style={{ padding: '2rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Link href="/about" style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            About
-          </Link>
-        </div>
-        <div style={{ padding: '2rem', textAlign: 'center', borderLeft: '1px solid #fff', borderRight: '1px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Link href="/" style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Kernel Exchange
-          </Link>
-        </div>
-        <div style={{ padding: '2rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Link href="/about#disclaimer" style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Disclaimer
-          </Link>
-        </div>
-      </footer>
     </>
   );
 }

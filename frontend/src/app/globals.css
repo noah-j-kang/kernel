@@ -252,3 +252,11 @@ input, textarea, select {
   from { border-right-color: #fff; }
   to { border-right-color: transparent; }
 }
+.footer-link {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.footer-link:hover {
+  color: #fff;
+}

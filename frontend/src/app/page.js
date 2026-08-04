@@ -43,7 +43,7 @@ export default function LandingPage() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === 'l2_update' && (!data.instrument_id || data.instrument_id === 'KERNEL-USD-SPOT')) {
+        if (data.type === 'l2_update' && (!data.instrument_id || data.instrument_id === 'COOKIE-USD-SPOT')) {
           if (data.book) {
             setOrderbook(data.book);
             if (data.book.bids && data.book.bids.length > 0) {
@@ -61,11 +61,11 @@ export default function LandingPage() {
       {/* HERO SECTION */}
       <section style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
         <h1 className="typewriter-text" style={{ fontSize: 'clamp(4rem, 8vw, 8rem)', textTransform: 'uppercase', fontWeight: 900, textAlign: 'center', lineHeight: 1.1 }}>
-          Kernel Exchange
+          Cookie Exchange
         </h1>
         <div className="animate-fade-up" style={{ animationDelay: '0.2s', marginTop: '3rem' }}>
           <Link href="/login" className="btn btn-primary" style={{ fontSize: '1.25rem', padding: '1rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '1rem', border: '1px solid #fff' }}>
-            Trade Kernel <span>→</span>
+            Trade Cookie <span>→</span>
           </Link>
         </div>
       </section>
@@ -84,13 +84,13 @@ export default function LandingPage() {
           {/* Chart Box */}
           <div style={{ border: '1px solid var(--border)', padding: '2rem', background: 'var(--surface)', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '1.5rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              KERNEL/USD
+              COOKIE/USD
               <span style={{ fontSize: '0.875rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className="live-indicator"></span> LIVE
               </span>
             </h3>
             <div style={{ flex: 1, minHeight: '400px', background: '#000' }}>
-              <Chart instrumentId="KERNEL-USD-SPOT" currentMid={currentMid} />
+              <Chart instrumentId="COOKIE-USD-SPOT" currentMid={currentMid} />
             </div>
           </div>
 
@@ -147,33 +147,6 @@ export default function LandingPage() {
 
       </section>
       
-      {/* FOOTER */}
-      <footer style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr 1fr', 
-        borderTop: '1px solid #fff', 
-        borderBottom: '1px solid #fff', 
-        color: '#fff',
-        textTransform: 'uppercase',
-        fontSize: '0.875rem',
-        letterSpacing: '1px'
-      }}>
-        <div style={{ padding: '2rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Link href="/about" style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            About
-          </Link>
-        </div>
-        <div style={{ padding: '2rem', textAlign: 'center', borderLeft: '1px solid #fff', borderRight: '1px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Kernel Exchange
-          </a>
-        </div>
-        <div style={{ padding: '2rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Link href="/about#disclaimer" style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Disclaimer
-          </Link>
-        </div>
-      </footer>
     </div>
   );
 }

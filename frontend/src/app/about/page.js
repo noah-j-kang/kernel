@@ -70,9 +70,9 @@ export default function AboutPage() {
 
         <div className="scroll-hidden" style={{ opacity: 0 }}>
           <div className="about-section">
-            <div className="about-title">Kernel Exchange</div>
+            <div className="about-title">Cookie Exchange</div>
             <div className="about-text">
-              The premier destination for simulated commodity trading. We offer an ultra-low latency matching engine designed to replicate the feel and execution of high-frequency institutional trading environments, built from the ground up for the Kernel ecosystem.
+              The premier destination for simulated commodity trading. We offer an ultra-low latency matching engine designed to replicate the feel and execution of high-frequency institutional trading environments, built from the ground up for the Cookie ecosystem.
             </div>
           </div>
 
@@ -80,7 +80,7 @@ export default function AboutPage() {
             <div className="about-title">Features</div>
             <div className="about-text">
               <ul style={{ listStyleType: 'none', padding: 0 }}>
-                <li style={{ marginBottom: '1rem' }}><strong>Spot Trading:</strong> Zero spread instant execution with deep liquidity for KERNEL/USD pairs.</li>
+                <li style={{ marginBottom: '1rem' }}><strong>Spot Trading:</strong> Zero spread instant execution with deep liquidity for COOKIE/USD pairs.</li>
                 <li style={{ marginBottom: '1rem' }}><strong>Perpetuals:</strong> Trade with margin. Funding rates settle every 8 hours, keeping the mark price anchored to the index.</li>
                 <li><strong>Options:</strong> Cash-settled European options that expire and settle directly into your balance automatically.</li>
               </ul>
@@ -98,40 +98,12 @@ export default function AboutPage() {
           <div className="about-section" id="disclaimer">
             <div className="about-title">Disclaimer</div>
             <div className="about-text">
-              <strong>Kernel is a simulated, fake commodity.</strong> It has absolutely no real-world USD value. Any balances, positions, or profits shown on this application are entirely fictitious and exist only for educational, testing, or entertainment purposes. Do not deposit real funds or expect real returns.
+              <strong>Cookie is a simulated, fake commodity.</strong> It has absolutely no real-world USD value. Any balances, positions, or profits shown on this application are entirely fictitious and exist only for educational, testing, or entertainment purposes. Do not deposit real funds or expect real returns.
             </div>
           </div>
         </div>
       </div>
       
-      {/* FOOTER */}
-      <footer style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr 1fr', 
-        borderTop: '1px solid #fff', 
-        borderBottom: '1px solid #fff', 
-        color: '#fff',
-        textTransform: 'uppercase',
-        fontSize: '0.875rem',
-        letterSpacing: '1px',
-        marginTop: 'auto'
-      }}>
-        <div style={{ padding: '2rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            About
-          </a>
-        </div>
-        <div style={{ padding: '2rem', textAlign: 'center', borderLeft: '1px solid #fff', borderRight: '1px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Link href="/" style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Kernel Exchange
-          </Link>
-        </div>
-        <div style={{ padding: '2rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <a href="#disclaimer" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: document.getElementById('disclaimer')?.offsetTop || 0, behavior: 'smooth' }); }} style={{ textDecoration: 'none', color: 'inherit', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Disclaimer
-          </a>
-        </div>
-      </footer>
     </div>
   );
 }
