@@ -91,7 +91,9 @@ export default function AboutPage() {
             <div className="about-title">API Access</div>
             <div className="about-text">
               Integrate your automated trading bots directly into our matching engine via our high-speed WebSocket and REST APIs. <br/><br/>
-              <em>[API Documentation Placeholder - Coming Soon]</em>
+              <Link href="/api-docs" style={{ color: '#00ffaa', textDecoration: 'none', borderBottom: '1px solid #00ffaa', paddingBottom: '2px' }}>
+                Read the Full API & SDK Documentation →
+              </Link>
             </div>
           </div>
 
