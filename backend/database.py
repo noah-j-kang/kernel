@@ -9,7 +9,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@lo
 class Database:
     def __init__(self):
         self.pool = None
-        self.api_keys_cache = set()
+        self.api_keys_cache = {} # key_hash -> str(user_id)
 
     async def connect(self):
         try:
@@ -27,14 +27,17 @@ class Database:
         if not self.pool: return
         async with self.pool.acquire() as conn:
             try:
-                rows = await conn.fetch("SELECT key_hash FROM api_keys")
-                self.api_keys_cache = {row['key_hash'] for row in rows}
+                rows = await conn.fetch("SELECT key_hash, user_id FROM api_keys WHERE is_active = TRUE")
+                self.api_keys_cache = {row['key_hash']: str(row['user_id']) for row in rows}
             except Exception as e:
                 print(f"Failed to load API keys (schema might not be created): {e}")
 
     async def validate_api_key(self, key_hash: str) -> bool:
         # O(1) in-memory lookup
         return key_hash in self.api_keys_cache
+
+    async def get_user_for_api_key(self, key_hash: str):
+        return self.api_keys_cache.get(key_hash)
 
     async def bulk_insert_executions(self, trades: List[dict], wallets: Dict[str, dict]):
         if not self.pool: return

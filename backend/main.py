@@ -15,7 +15,14 @@ from backend.orderbook import Order
 from backend.api_models import OrderRequest
 from backend.auth import validate_auth_and_rate_limit
 from backend.websocket_manager import ws_manager
-from backend.bots import market_maker_loop, noise_trader_loop, options_market_maker_loop
+from backend.bots import (
+    market_maker_loop, 
+    noise_trader_loop, 
+    momentum_trader_loop, 
+    fundamental_trader_loop, 
+    arbitrageur_loop, 
+    options_market_maker_loop
+)
 
 engine = Engine()
 
@@ -188,12 +195,30 @@ async def lifespan(app: FastAPI):
     options_settlement_task = asyncio.create_task(options_settlement_worker())
     
     bot_tasks = []
-    for i in range(5):
-        bot_tasks.append(asyncio.create_task(market_maker_loop(f"mm_{i}", engine)))
-        bot_tasks.append(asyncio.create_task(noise_trader_loop(f"nt_{i}", engine)))
-        bot_tasks.append(asyncio.create_task(market_maker_loop(f"perp_mm_{i}", engine, instrument_id="COOKIE-PERP")))
-        bot_tasks.append(asyncio.create_task(noise_trader_loop(f"perp_nt_{i}", engine, instrument_id="COOKIE-PERP")))
+    
+    # 2 Market Makers
+    for i in range(2):
+        bot_tasks.append(asyncio.create_task(market_maker_loop(f"mm_{i}", engine, "COOKIE-USD-SPOT")))
+        bot_tasks.append(asyncio.create_task(market_maker_loop(f"perp_mm_{i}", engine, "COOKIE-PERP")))
         
+    # 8 Noise Traders
+    for i in range(8):
+        bot_tasks.append(asyncio.create_task(noise_trader_loop(f"nt_{i}", engine, "COOKIE-USD-SPOT")))
+        bot_tasks.append(asyncio.create_task(noise_trader_loop(f"perp_nt_{i}", engine, "COOKIE-PERP")))
+        
+    # 4 Momentum Traders
+    for i in range(4):
+        bot_tasks.append(asyncio.create_task(momentum_trader_loop(f"mom_{i}", engine, "COOKIE-USD-SPOT")))
+        
+    # 4 Fundamental Traders
+    for i in range(4):
+        bot_tasks.append(asyncio.create_task(fundamental_trader_loop(f"fund_{i}", engine, "COOKIE-USD-SPOT")))
+        
+    # 2 Arbitrageurs
+    for i in range(2):
+        bot_tasks.append(asyncio.create_task(arbitrageur_loop(f"arb_{i}", engine)))
+        
+    # 1 Options MM
     bot_tasks.append(asyncio.create_task(options_market_maker_loop("opt_mm", engine)))
     
     yield
@@ -207,7 +232,10 @@ async def lifespan(app: FastAPI):
     options_settlement_task.cancel()
     await db.disconnect()
 
+from backend.routers.auth_router import router as auth_router
+
 app = FastAPI(title="Cookie Exchange API", version="1.0.0", lifespan=lifespan)
+app.include_router(auth_router, prefix="/v1/auth", tags=["auth"])
 
 app.add_middleware(
     CORSMiddleware,
@@ -304,14 +332,16 @@ async def get_leaderboard():
             total_capital += unrealized_pnl
 
         name = uid
-        if uid.startswith("mm_"):
-            name = f"Market Maker {uid.split('_')[1]}"
-        elif uid.startswith("nt_"):
-            name = f"Noise Trader {uid.split('_')[1]}"
-        elif uid.startswith("perp_mm_"):
-            name = f"Perp Market Maker {uid.split('_')[2]}"
-        elif uid.startswith("perp_nt_"):
-            name = f"Perp Noise Trader {uid.split('_')[2]}"
+        if uid.startswith("mm_") or uid.startswith("perp_mm_"):
+            name = f"Market Maker {uid.split('_')[-1]}"
+        elif uid.startswith("nt_") or uid.startswith("perp_nt_"):
+            name = f"Noise Trader {uid.split('_')[-1]}"
+        elif uid.startswith("mom_"):
+            name = f"Momentum Trader {uid.split('_')[-1]}"
+        elif uid.startswith("fund_"):
+            name = f"Value Investor {uid.split('_')[-1]}"
+        elif uid.startswith("arb_"):
+            name = f"Arbitrageur {uid.split('_')[-1]}"
         elif uid == "opt_mm":
             name = "Options Market Maker"
 
