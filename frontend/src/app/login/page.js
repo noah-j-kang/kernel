@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -15,42 +14,45 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.push('/trade');
-      } else {
-        setIsCheckingSession(false);
-      }
-    });
+    const token = localStorage.getItem('cookie_token');
+    if (token) {
+      router.push('/dashboard');
+    } else {
+      setIsCheckingSession(false);
+    }
   }, [router]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
+    
+    const endpoint = isLogin ? '/v1/auth/login' : '/v1/auth/register';
 
-    if (isLogin) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+    try {
+      const res = await fetch(`http://localhost:8000${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        router.push('/trade');
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.detail || 'Authentication failed');
+        return;
       }
-    } else {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
+      
+      if (isLogin) {
+        localStorage.setItem('cookie_token', data.token);
+        localStorage.setItem('cookie_user_id', data.user_id);
+        router.push('/dashboard');
       } else {
-        setMessage('Check your email for the confirmation link!');
+        setMessage('Registration successful! Please log in.');
+        setIsLogin(true);
       }
+    } catch (err) {
+      setError('Network error connecting to backend');
     }
   };
 
