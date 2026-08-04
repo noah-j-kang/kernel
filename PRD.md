@@ -1,13 +1,13 @@
-# Kernel Exchange - Product Requirement Document (PRD)
+# Cookie Exchange - Product Requirement Document (PRD)
 
 ## 1. Executive Summary & Product Vision
 *   **Mission & Objectives:** A full-stack, simulated single-commodity financial exchange web application.
 *   **Target Audience:** Algorithmic Traders, Students, Hobbyists.
 *   **Economic Parameters:** 
-    * Commodity: "Kernel"
+    * Commodity: "Cookie"
     * Starting Price: $10.00
     * Total Float: 1,000,000,000 units
-    * Starting User Capital: $100,000 USD, 0 Kernels
+    * Starting User Capital: $100,000 USD, 0 Cookies
     * Target Daily Volume: 1,000,000 to 5,000,000 units
 *   **Core Constraints:** 100% Free-Tier Infrastructure.
 
@@ -24,7 +24,7 @@
 
 ## 2. System Architecture & Infrastructure (Persistent Free-Tier Hosting)
 
-This section evaluates the infrastructure required to host the Kernel Exchange's core backend: the Central Limit Order Book (CLOB), WebSocket gateway, and autonomous bots. Because a CLOB requires continuous execution and an in-memory state tree, ephemeral serverless functions (like AWS Lambda or Vercel Edge Functions) are categorically disqualified. We must utilize a persistent containerized environment.
+This section evaluates the infrastructure required to host the Cookie Exchange's core backend: the Central Limit Order Book (CLOB), WebSocket gateway, and autonomous bots. Because a CLOB requires continuous execution and an in-memory state tree, ephemeral serverless functions (like AWS Lambda or Vercel Edge Functions) are categorically disqualified. We must utilize a persistent containerized environment.
 
 ### 2.1 Platform Comparison: 2026 Free-Tier Persistent Hosting
 
@@ -98,7 +98,7 @@ To ensure ultra-low latency execution on constrained CPUs, the database is stric
     *   Current WebSocket connections and active user sessions.
 *   **Disk (Supabase PostgreSQL):**
     *   User accounts and API credentials.
-    *   Hardened wallet balances (USD and Kernels).
+    *   Hardened wallet balances (USD and Cookies).
     *   Historical executed trades (the `executions` ledger).
     *   Aggregated market data (`daily_candles`, `minute_candles`).
 
@@ -129,7 +129,7 @@ CREATE INDEX idx_api_keys_user ON api_keys(user_id);
 CREATE TABLE wallets (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     usd_balance NUMERIC(15, 2) DEFAULT 100000.00,
-    kernel_balance NUMERIC(15, 4) DEFAULT 0.0000,
+    cookie_balance NUMERIC(15, 4) DEFAULT 0.0000,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -213,7 +213,7 @@ A highly active exchange with 10 internal bots will generate millions of executi
 1.  **Ephemeral Executions:** The `executions` table is treated as a short-term ledger. We only retain execution rows for **7 days**.
 2.  **Aggregation:** Every night at 00:00 UTC, a Supabase `pg_cron` background job aggregates the previous day's execution rows into the `daily_candles` (and `minute_candles` if desired) tables.
 3.  **Truncation:** After aggregation, raw executions older than 7 days are hard-deleted. 
-4.  **Balance Integrity:** Because we store canonical `usd_balance` and `kernel_balance` values directly on the `wallets` table via our batch worker, we do not need to sum raw `executions` to calculate user portfolios. We can safely destroy old trade data.
+4.  **Balance Integrity:** Because we store canonical `usd_balance` and `cookie_balance` values directly on the `wallets` table via our batch worker, we do not need to sum raw `executions` to calculate user portfolios. We can safely destroy old trade data.
 
 **Supabase pg_cron Job Implementation:**
 ```sql
@@ -228,7 +228,7 @@ $$);
 
 ## 4. API Gateway, Authentication & Networking
 
-The Kernel Exchange relies on an API-First architecture, requiring low-latency and highly secure REST and WebSocket interfaces for users executing automated algorithmic trading strategies from their local machines.
+The Cookie Exchange relies on an API-First architecture, requiring low-latency and highly secure REST and WebSocket interfaces for users executing automated algorithmic trading strategies from their local machines.
 
 ### 4.1 API Authentication Strategy
 
@@ -244,7 +244,7 @@ Below is the OpenAPI specification for the core trading endpoints:
 ```yaml
 openapi: 3.0.0
 info:
-  title: Kernel Exchange API
+  title: Cookie Exchange API
   version: 1.0.0
 paths:
   /v1/orders:
@@ -358,7 +358,7 @@ We implement an in-memory **Token Bucket algorithm** per API key:
 
 ### 4.5 Python Client-Side Integration Example
 
-Below is the standard integration code that users will write on their local machines to interact with Kernel Exchange.
+Below is the standard integration code that users will write on their local machines to interact with Cookie Exchange.
 
 ```python
 import requests
@@ -368,8 +368,8 @@ import threading
 import time
 
 API_KEY = "kx_live_8a9b..."
-BASE_URL = "https://api.kernelexchange.com/v1"
-WS_URL = "wss://api.kernelexchange.com/ws"
+BASE_URL = "https://api.cookieexchange.com/v1"
+WS_URL = "wss://api.cookieexchange.com/ws"
 
 headers = {
     "X-API-KEY": API_KEY, 
@@ -417,7 +417,7 @@ if __name__ == "__main__":
 
 ## 5. Autonomous Internal Liquidity Engine
 
-To ensure the Kernel Exchange always feels "alive" and provides immediate counterparty liquidity to new users writing their first trading scripts, the backend natively hosts 10 autonomous bots directly inside the Python execution engine.
+To ensure the Cookie Exchange always feels "alive" and provides immediate counterparty liquidity to new users writing their first trading scripts, the backend natively hosts 10 autonomous bots directly inside the Python execution engine.
 
 ### 5.1 Event Loop Integration
 
@@ -454,18 +454,18 @@ The 5 Market Maker bots act as the backbone of the exchange. They calculate a th
 
 *   **Theoretical Price Tracking:** They track the midpoint of the current book, bounded tightly around $10.00.
 *   **Inventory Risk Management (Avellaneda-Stoikov variant):**
-    *   If a bot accumulates too much Kernel (positive inventory), it lowers its bid price to stop buying, and lowers its ask price to encourage other participants to buy from it.
-    *   If a bot has too little Kernel (negative inventory), it shifts its quotes upwards.
+    *   If a bot accumulates too much Cookie (positive inventory), it lowers its bid price to stop buying, and lowers its ask price to encourage other participants to buy from it.
+    *   If a bot has too little Cookie (negative inventory), it shifts its quotes upwards.
 
 ```python
 async def market_maker_loop(bot_id: str):
-    inventory_kernel = 0
+    inventory_cookie = 0
     target_price = 10.00
     spread = 0.05
     
     while True:
         # 1. Adjust quotes based on inventory skew
-        inventory_skew = inventory_kernel * 0.001 
+        inventory_skew = inventory_cookie * 0.001 
         adjusted_mid = target_price - inventory_skew
         
         bid_price = round(adjusted_mid - (spread / 2), 2)
@@ -477,7 +477,7 @@ async def market_maker_loop(bot_id: str):
         engine.place_order(bot_id, side="sell", price=ask_price, quantity=1000)
         
         # 3. Update local inventory state based on recent fills
-        inventory_kernel = engine.get_wallet(bot_id).kernel_balance
+        inventory_cookie = engine.get_wallet(bot_id).cookie_balance
         
         # 4. Yield control back to event loop
         await asyncio.sleep(1.0)
@@ -518,5 +518,5 @@ async def noise_trader_loop(bot_id: str):
 Because bots act randomly or pseudo-systematically, they risk accumulating 100% of the 1B float or going bankrupt in USD.
 
 To mitigate this without writing complex database ledgers:
-1.  **Native Hard Limits:** The `engine.place_order` internal method natively checks the `bot_id`. If `inventory_kernel > 50,000`, the bot is instantly blocked from placing `buy` orders until it offloads inventory.
-2.  **Daily Mean-Reversion Reset:** At 00:00 UTC, a background task automatically resets all 10 bot wallets to their initial state ($100,000 USD, 0 Kernels) and resets the "fair value" anchor to $10.00. This ensures the market can never permanently trend to zero or infinity, providing a stable sandbox for users.
+1.  **Native Hard Limits:** The `engine.place_order` internal method natively checks the `bot_id`. If `inventory_cookie > 50,000`, the bot is instantly blocked from placing `buy` orders until it offloads inventory.
+2.  **Daily Mean-Reversion Reset:** At 00:00 UTC, a background task automatically resets all 10 bot wallets to their initial state ($100,000 USD, 0 Cookies) and resets the "fair value" anchor to $10.00. This ensures the market can never permanently trend to zero or infinity, providing a stable sandbox for users.

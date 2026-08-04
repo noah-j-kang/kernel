@@ -8,7 +8,7 @@ import uuid
 class Order(BaseModel):
     order_id: str
     user_id: str
-    instrument_id: str = "KERNEL-USD-SPOT"
+    instrument_id: str = "COOKIE-USD-SPOT"
     side: str  # "buy" or "sell"
     type: str  # "limit" or "market"
     price: float

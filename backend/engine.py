@@ -16,20 +16,20 @@ class Execution:
 
 class Engine:
     def __init__(self):
-        self.orderbooks: dict[str, OrderBook] = {"KERNEL-USD-SPOT": OrderBook()}
+        self.orderbooks: dict[str, OrderBook] = {"COOKIE-USD-SPOT": OrderBook()}
         self.trade_queue: deque[Execution] = deque()
-        self.wallets = {} # {user_id: {"usd": 100000.0, "kernel": 0.0, "margin_usd": 0.0, "kernel_perp": 0.0}}
+        self.wallets = {} # {user_id: {"usd": 100000.0, "cookie": 0.0, "margin_usd": 0.0, "cookie_perp": 0.0}}
         self.wallet_updates = {}
         
     def get_wallet(self, user_id: str):
         if user_id not in self.wallets:
-            self.wallets[user_id] = {"usd": 100000.0, "kernel": 0.0, "margin_usd": 0.0, "positions": {}}
+            self.wallets[user_id] = {"usd": 100000.0, "cookie": 0.0, "margin_usd": 0.0, "positions": {}}
         return self.wallets[user_id]
         
-    def update_wallet(self, user_id: str, usd_delta: float, kernel_delta: float, margin_usd_delta: float = 0.0):
+    def update_wallet(self, user_id: str, usd_delta: float, cookie_delta: float, margin_usd_delta: float = 0.0):
         w = self.get_wallet(user_id)
         w["usd"] += usd_delta
-        w["kernel"] += kernel_delta
+        w["cookie"] += cookie_delta
         w["margin_usd"] += margin_usd_delta
         self.wallet_updates[user_id] = w.copy()
         
@@ -81,7 +81,7 @@ class Engine:
             self.orderbooks[instrument_id] = OrderBook()
         return self.orderbooks[instrument_id]
         
-    def cancel_order(self, order_id: str, instrument_id: str = "KERNEL-USD-SPOT") -> bool:
+    def cancel_order(self, order_id: str, instrument_id: str = "COOKIE-USD-SPOT") -> bool:
         # TODO: implement proper balance un-locking if we pre-deduct balances
         return self.get_orderbook(instrument_id).cancel_order(order_id)
         
@@ -114,7 +114,7 @@ class Engine:
                     fee_taker = trade_value * 0.0010  # 10 bps taker fee
                     fee_maker = trade_value * 0.0005  # 5 bps maker fee
                     
-                    if order.instrument_id == "KERNEL-USD-SPOT":
+                    if order.instrument_id == "COOKIE-USD-SPOT":
                         self.update_wallet(order.user_id, -trade_value - fee_taker, trade_qty)
                         self.update_wallet(resting_order.user_id, trade_value - fee_maker, -trade_qty)
                     else:
@@ -149,7 +149,7 @@ class Engine:
                     fee_taker = trade_value * 0.0010  # 10 bps taker fee
                     fee_maker = trade_value * 0.0005  # 5 bps maker fee
                     
-                    if order.instrument_id == "KERNEL-USD-SPOT":
+                    if order.instrument_id == "COOKIE-USD-SPOT":
                         self.update_wallet(resting_order.user_id, -trade_value - fee_maker, trade_qty)
                         self.update_wallet(order.user_id, trade_value - fee_taker, -trade_qty)
                     else:
@@ -174,7 +174,7 @@ class Engine:
         self.trade_queue.extend(executions)
         return executions
         
-    def get_midpoint(self, instrument_id: str = "KERNEL-USD-SPOT"):
+    def get_midpoint(self, instrument_id: str = "COOKIE-USD-SPOT"):
         ob = self.get_orderbook(instrument_id)
         if ob.bids and ob.asks:
             return (ob.bids.peekitem(0)[0] + ob.asks.peekitem(0)[0]) / 2.0

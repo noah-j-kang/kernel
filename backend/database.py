@@ -53,7 +53,7 @@ class Database:
                             t['id'], 
                             t['buyer_id'], 
                             t['seller_id'], 
-                            t.get('instrument_id', 'KERNEL-USD-SPOT'),
+                            t.get('instrument_id', 'COOKIE-USD-SPOT'),
                             t['price'], 
                             t['quantity'], 
                             datetime.datetime.fromtimestamp(t['executed_at'], tz=datetime.timezone.utc)
@@ -64,18 +64,18 @@ class Database:
                 # Update wallets
                 if wallets:
                     wallet_query = """
-                        INSERT INTO wallets (user_id, usd_balance, kernel_balance, margin_usd, kernel_perp, kernel_perp_entry, updated_at)
+                        INSERT INTO wallets (user_id, usd_balance, cookie_balance, margin_usd, cookie_perp, cookie_perp_entry, updated_at)
                         VALUES ($1, $2, $3, $4, $5, $6, NOW())
                         ON CONFLICT (user_id) DO UPDATE SET
                             usd_balance = EXCLUDED.usd_balance,
-                            kernel_balance = EXCLUDED.kernel_balance,
+                            cookie_balance = EXCLUDED.cookie_balance,
                             margin_usd = EXCLUDED.margin_usd,
-                            kernel_perp = EXCLUDED.kernel_perp,
-                            kernel_perp_entry = EXCLUDED.kernel_perp_entry,
+                            cookie_perp = EXCLUDED.cookie_perp,
+                            cookie_perp_entry = EXCLUDED.cookie_perp_entry,
                             updated_at = NOW();
                     """
                     wallet_records = [
-                        (uid, w['usd'], w['kernel'], w.get('margin_usd', 0.0), w.get('kernel_perp', 0.0), w.get('kernel_perp_entry', 0.0)) for uid, w in wallets.items()
+                        (uid, w['usd'], w['cookie'], w.get('margin_usd', 0.0), w.get('cookie_perp', 0.0), w.get('cookie_perp_entry', 0.0)) for uid, w in wallets.items()
                     ]
                     await conn.executemany(wallet_query, wallet_records)
 

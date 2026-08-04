@@ -43,10 +43,10 @@ def test_engine_basic_matching():
     user_a = engine.get_wallet("user_A")
     user_b = engine.get_wallet("user_B")
     
-    # user A sold 50 units at 10.05 -> gained 502.5 USD, lost 50 kernel
+    # user A sold 50 units at 10.05 -> gained 502.5 USD, lost 50 cookie
     assert user_a["usd"] == 100000.0 + 502.5
-    assert user_a["kernel"] == -50.0
+    assert user_a["cookie"] == -50.0
     
-    # user B bought 50 units at 10.05 -> lost 502.5 USD, gained 50 kernel
+    # user B bought 50 units at 10.05 -> lost 502.5 USD, gained 50 cookie
     assert user_b["usd"] == 100000.0 - 502.5
-    assert user_b["kernel"] == 50.0
+    assert user_b["cookie"] == 50.0
